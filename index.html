@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>वार्ड 5 - इलेक्शन डैशबोर्ड</title>
+    <!-- Supabase को कनेक्ट करने वाली लाइब्रेरी -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 15px; background-color: #f4f4f9; }
+        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .voted { border-left: 5px solid #28a745; background-color: #e8f5e9; }
+        .not-voted { border-left: 5px solid #dc3545; background-color: #ffebee; }
+        h1 { text-align: center; color: #333; font-size: 24px; }
+        .stats { display: flex; justify-content: space-between; background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold;}
+    </style>
+</head>
+<body>
+    <h1>वार्ड 5 - इलेक्शन डैशबोर्ड</h1>
+    
+    <div id="loading">डेटा लोड हो रहा है...</div>
+    <div id="voter-list"></div>
+
+    <script>
+        // 1. यहाँ अपना असली Supabase URL डालें (https://...supabase.co)
+        const supabaseUrl = 'YOUR_SUPABASE_URL_HERE';
+        // 2. आपकी Publishable Key
+        const supabaseKey = 'sb_publishable_KSUQZrLeqOukdc9OUsGIqA_aSp_Sqq0';
+        
+        // Supabase से कनेक्शन चालू
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function fetchVoters() {
+            const { data, error } = await supabase.from('voters').select('*').order('house_no', { ascending: true });
+            
+            document.getElementById('loading').style.display = 'none';
+            const listContainer = document.getElementById('voter-list');
+            
+            if (error) {
+                listContainer.innerHTML = '<p>एरर: डेटा नहीं आ पाया। API की जांच करें।</p>';
+                console.error(error);
+                return;
+            }
+
+            // हर वोटर के लिए एक कार्ड बनाना
+            data.forEach(voter => {
+                const hasVoted = voter.voting_status === 'Voted';
+                const statusClass = hasVoted ? 'voted' : 'not-voted';
+                const statusText = hasVoted ? '✅ वोट दे दिया' : '❌ अभी वोट नहीं दिया';
+                
+                const card = document.createElement('div');
+                card.className = `card ${statusClass}`;
+                card.innerHTML = `
+                    <h3 style="margin: 0 0 5px 0;">${voter.name} (मकान नं: ${voter.house_no})</h3>
+                    <p style="margin: 0 0 5px 0; font-size: 14px; color: #555;">
+                        रिश्तेदार: ${voter.relative_name} | उम्र: ${voter.age} | लिंग: ${voter.gender}
+                    </p>
+                    <p style="margin: 0; font-weight: bold; color: ${hasVoted ? '#155724' : '#721c24'}">${statusText}</p>
+                `;
+                listContainer.appendChild(card);
+            });
+        }
+
+        // पेज खुलते ही फंक्शन चलाएं
+        fetchVoters();
+    </script>
+</body>
+</html>
