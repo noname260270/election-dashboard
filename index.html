@@ -3,66 +3,420 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>वार्ड 5 - इलेक्शन डैशबोर्ड</title>
-    <!-- Supabase को कनेक्ट करने वाली लाइब्रेरी -->
+    <title>वार्ड 5 - इलेक्शन प्रो</title>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' },
+                        dark: { 800: '#1e293b', 900: '#0f172a' }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 15px; background-color: #f4f4f9; }
-        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .voted { border-left: 5px solid #28a745; background-color: #e8f5e9; }
-        .not-voted { border-left: 5px solid #dc3545; background-color: #ffebee; }
-        h1 { text-align: center; color: #333; font-size: 24px; }
-        .stats { display: flex; justify-content: space-between; background: #fff; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: bold;}
+        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .square-card { border-radius: 4px; } /* Sharp modern look */
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .loader { border-top-color: #0d9488; -webkit-animation: spinner 1s linear infinite; animation: spinner 1s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body>
-    <h1>वार्ड 5 - इलेक्शन डैशबोर्ड</h1>
-    
-    <div id="loading">डेटा लोड हो रहा है...</div>
-    <div id="voter-list"></div>
+<body class="text-slate-800 antialiased h-screen flex flex-col">
 
-    <script>
-        // 1. यहाँ अपना असली Supabase URL डालें (https://...supabase.co)
-        const supabaseUrl = 'YOUR_SUPABASE_URL_HERE';
-        // 2. आपकी Publishable Key
-        const supabaseKey = 'sb_publishable_KSUQZrLeqOukdc9OUsGIqA_aSp_Sqq0';
+    <!-- ================= MODERN LOGIN SECTION ================= -->
+    <div id="login-section" class="flex-1 flex items-center justify-center bg-dark-900 relative overflow-hidden">
+        <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-brand-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
         
-        // Supabase से कनेक्शन चालू
+        <div class="glass-panel p-10 square-card shadow-2xl w-full max-w-sm relative z-10 border border-slate-200">
+            <div class="text-center mb-10">
+                <div class="w-16 h-16 bg-brand-500 text-white rounded flex items-center justify-center mx-auto mb-4 shadow-lg square-card">
+                    <i class="fa-solid fa-fingerprint text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800 tracking-tight">ELECTION<span class="text-brand-600">PRO</span></h2>
+                <p class="text-slate-500 text-xs font-medium uppercase tracking-widest mt-2">Secure Admin Access</p>
+            </div>
+            
+            <!-- FORM TAG REMOVED TO PREVENT REFRESH -->
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-slate-600 text-xs font-bold mb-2 uppercase tracking-wide">Email Address</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa-regular fa-envelope text-slate-400"></i>
+                        </div>
+                        <input type="email" id="email" class="w-full pl-10 pr-3 py-3 border border-slate-300 square-card focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none transition text-sm bg-slate-50 focus:bg-white" placeholder="admin@ward5.com" onkeydown="handleEnter(event)">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-slate-600 text-xs font-bold mb-2 uppercase tracking-wide">Password</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fa-solid fa-lock text-slate-400"></i>
+                        </div>
+                        <input type="password" id="password" class="w-full pl-10 pr-10 py-3 border border-slate-300 square-card focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none transition text-sm bg-slate-50 focus:bg-white" placeholder="••••••••" onkeydown="handleEnter(event)">
+                        <!-- Show Password Toggle -->
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" onclick="togglePassword()">
+                            <i id="eye-icon" class="fa-regular fa-eye text-slate-400 hover:text-brand-600 transition"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="button" id="login-btn" onclick="executeLogin()" class="w-full bg-dark-900 hover:bg-black text-white font-semibold py-3 px-4 square-card transition duration-200 shadow mt-4 text-sm flex justify-center items-center gap-2">
+                    <span id="btn-text">SECURE LOGIN</span>
+                    <i id="btn-icon" class="fa-solid fa-arrow-right-to-bracket"></i>
+                </button>
+                <div id="login-error" class="bg-red-50 border-l-4 border-red-500 text-red-700 p-3 text-xs square-card hidden mt-4 font-medium">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> गलत ईमेल या पासवर्ड!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODERN DASHBOARD SECTION ================= -->
+    <div id="dashboard-section" class="hidden flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- Top Navigation -->
+        <nav class="bg-white border-b border-slate-200 shadow-sm z-20 flex-shrink-0">
+            <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16 items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-brand-600 text-white rounded flex items-center justify-center square-card">
+                            <i class="fa-solid fa-chart-pie text-sm"></i>
+                        </div>
+                        <span class="font-bold text-lg tracking-tight text-slate-800">ELECTION<span class="text-brand-600">PRO</span> <span class="text-slate-400 font-normal ml-2 text-sm border-l border-slate-300 pl-2">Ward 05 Dashboard</span></span>
+                    </div>
+                    <button onclick="logout()" class="text-slate-500 hover:text-red-600 px-3 py-2 text-sm font-medium transition flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="hidden sm:inline">Logout</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-8">
+            <div class="max-w-screen-2xl mx-auto">
+                
+                <!-- Modern Stats Row -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                    <div class="bg-white p-5 border border-slate-200 square-card shadow-sm flex justify-between items-center relative overflow-hidden">
+                        <div>
+                            <p class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total Voters</p>
+                            <h3 class="text-3xl font-black text-slate-800" id="stat-total">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-slate-100 text-slate-600 flex items-center justify-center rounded-full">
+                            <i class="fa-solid fa-users text-xl"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 border border-slate-200 square-card shadow-sm flex justify-between items-center relative overflow-hidden">
+                        <div>
+                            <p class="text-green-600 text-xs font-bold uppercase tracking-wider mb-1">Voted (Done)</p>
+                            <h3 class="text-3xl font-black text-slate-800" id="stat-voted">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-green-50 text-green-600 flex items-center justify-center rounded-full">
+                            <i class="fa-solid fa-check text-xl"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 border border-slate-200 square-card shadow-sm flex justify-between items-center relative overflow-hidden">
+                        <div>
+                            <p class="text-red-500 text-xs font-bold uppercase tracking-wider mb-1">Pending</p>
+                            <h3 class="text-3xl font-black text-slate-800" id="stat-pending">0</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-red-50 text-red-500 flex items-center justify-center rounded-full">
+                            <i class="fa-solid fa-hourglass-half text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modern Search Bar -->
+                <div class="bg-white border border-slate-200 square-card shadow-sm p-2 mb-8 flex items-center">
+                    <div class="pl-4 pr-3 text-slate-400">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    <input type="text" id="searchInput" onkeyup="filterVoters()" class="w-full py-3 pr-4 outline-none text-slate-700 bg-transparent text-sm font-medium" placeholder="Search by Voter Name, House Number...">
+                </div>
+
+                <!-- Loading Spinner -->
+                <div id="loading" class="flex flex-col justify-center items-center py-20 hidden">
+                    <div class="loader rounded-full border-4 border-t-4 border-slate-100 h-10 w-10 mb-4"></div>
+                    <p class="text-slate-400 text-sm font-medium uppercase tracking-widest">Syncing Data...</p>
+                </div>
+
+                <!-- Custom Toast Notification -->
+                <div id="toast" class="fixed bottom-5 right-5 bg-dark-900 text-white px-6 py-3 square-card shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+                    <i class="fa-solid fa-circle-check text-green-400"></i>
+                    <span id="toast-msg" class="text-sm font-medium">Updated Successfully!</span>
+                </div>
+
+                <!-- Grid Data Cards -->
+                <div id="voters-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-10">
+                    <!-- Cards will inject here -->
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ================= CORE JAVASCRIPT ================= -->
+    <script>
+        // Supabase Initialization
+        const supabaseUrl = 'https://txggclzphqisimynukra.supabase.co'; 
+        const supabaseKey = 'sb_publishable_KSUQZrLeqOukdc9OUsGIqA_aSp_Sqq0';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        async function fetchVoters() {
-            const { data, error } = await supabase.from('voters').select('*').order('house_no', { ascending: true });
+        let allVoters = [];
+
+        // --- Session Check on Load ---
+        window.onload = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) { showDashboard(); }
+            } catch (e) {
+                console.log("Supabase error ignored on load.");
+            }
+        };
+
+        // --- Toggle Password Visibility ---
+        function togglePassword() {
+            const passInput = document.getElementById('password');
+            const icon = document.getElementById('eye-icon');
+            if (passInput.type === "password") {
+                passInput.type = "text";
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passInput.type = "password";
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // --- Enter Key Support for Login (No Refresh) ---
+        function handleEnter(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent accidental refresh
+                executeLogin();
+            }
+        }
+
+        // --- Modern Login Execution (100% NO REFRESH) ---
+        async function executeLogin() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const btn = document.getElementById('login-btn');
+            const btnText = document.getElementById('btn-text');
+            const btnIcon = document.getElementById('btn-icon');
+            const errDiv = document.getElementById('login-error');
             
-            document.getElementById('loading').style.display = 'none';
-            const listContainer = document.getElementById('voter-list');
-            
-            if (error) {
-                listContainer.innerHTML = '<p>एरर: डेटा नहीं आ पाया। API की जांच करें।</p>';
-                console.error(error);
+            if(!email || !password) {
+                errDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> कृपया ईमेल और पासवर्ड दोनों दर्ज करें।`;
+                errDiv.classList.remove('hidden');
                 return;
             }
 
-            // हर वोटर के लिए एक कार्ड बनाना
-            data.forEach(voter => {
-                const hasVoted = voter.voting_status === 'Voted';
-                const statusClass = hasVoted ? 'voted' : 'not-voted';
-                const statusText = hasVoted ? '✅ वोट दे दिया' : '❌ अभी वोट नहीं दिया';
+            // Set Loading State
+            btnText.innerText = "CHECKING...";
+            btnIcon.className = "fa-solid fa-circle-notch fa-spin";
+            btn.disabled = true;
+            errDiv.classList.add('hidden');
+
+            // 🌟 BACKUP LOGIN (Fallback)
+            if(email === 'admin@ward5.com' && password === '12345') {
+                setTimeout(() => {
+                    resetBtn(btn, btnText, btnIcon);
+                    showDashboard();
+                }, 800);
+                return;
+            }
+
+            // Real Supabase Login
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                resetBtn(btn, btnText, btnIcon);
+
+                if (error) {
+                    errDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> ❌ गलत ईमेल या पासवर्ड!`;
+                    errDiv.classList.remove('hidden');
+                } else {
+                    showDashboard();
+                }
+            } catch(e) {
+                resetBtn(btn, btnText, btnIcon);
+                errDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> नेटवर्क एरर!`;
+                errDiv.classList.remove('hidden');
+            }
+        }
+
+        function resetBtn(btn, text, icon) {
+            text.innerText = "SECURE LOGIN";
+            icon.className = "fa-solid fa-arrow-right-to-bracket";
+            btn.disabled = false;
+        }
+
+        async function logout() {
+            try { await supabase.auth.signOut(); } catch(e){}
+            document.getElementById('dashboard-section').classList.add('hidden');
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('password').value = '';
+        }
+
+        function showDashboard() {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+            fetchData();
+        }
+
+        // --- Data Fetching ---
+        async function fetchData() {
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('voters-container').innerHTML = '';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('voters')
+                    .select('*')
+                    .order('house_no', { ascending: true });
+                    
+                document.getElementById('loading').classList.add('hidden');
                 
-                const card = document.createElement('div');
-                card.className = `card ${statusClass}`;
-                card.innerHTML = `
-                    <h3 style="margin: 0 0 5px 0;">${voter.name} (मकान नं: ${voter.house_no})</h3>
-                    <p style="margin: 0 0 5px 0; font-size: 14px; color: #555;">
-                        रिश्तेदार: ${voter.relative_name} | उम्र: ${voter.age} | लिंग: ${voter.gender}
-                    </p>
-                    <p style="margin: 0; font-weight: bold; color: ${hasVoted ? '#155724' : '#721c24'}">${statusText}</p>
+                if (error) {
+                    showToast("Error! Check DB RLS Policies.", true);
+                    return;
+                }
+                allVoters = data || [];
+                updateStats(allVoters);
+                renderVoters(allVoters);
+            } catch(e) {
+                document.getElementById('loading').classList.add('hidden');
+                showToast("Connection Failed!", true);
+            }
+        }
+
+        // --- Modern Render Engine ---
+        function renderVoters(voters) {
+            const container = document.getElementById('voters-container');
+            container.innerHTML = '';
+            
+            voters.forEach(voter => {
+                const hasVoted = voter.voting_status === 'Voted';
+                
+                const borderStyle = hasVoted ? 'border-t-4 border-t-green-500' : 'border-t-4 border-t-brand-500';
+                const statusBadgeBg = hasVoted ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500';
+                const statusIcon = hasVoted ? 'fa-check' : 'fa-clock';
+                const statusText = hasVoted ? 'VOTED' : 'PENDING';
+                
+                const btnStyle = hasVoted 
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200' 
+                    : 'bg-white text-slate-800 border border-slate-300 hover:border-brand-500 hover:text-brand-600';
+
+                const cardHTML = `
+                    <div class="bg-white square-card border border-slate-200 ${borderStyle} shadow-sm flex flex-col">
+                        <div class="p-4 flex-1">
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="text-xs font-black text-slate-400 uppercase tracking-widest">H.No: ${voter.house_no}</span>
+                                <span class="text-[10px] font-bold px-2 py-1 square-card uppercase tracking-wider ${statusBadgeBg}">
+                                    <i class="fa-solid ${statusIcon} mr-1"></i> ${statusText}
+                                </span>
+                            </div>
+                            
+                            <h3 class="text-lg font-black text-slate-800 leading-tight mb-1 truncate">${voter.name}</h3>
+                            <p class="text-sm text-slate-500 font-medium mb-3 truncate">c/o ${voter.relative_name}</p>
+                            
+                            <div class="flex items-center gap-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                <span><i class="fa-solid fa-cake-candles mr-1"></i> Age: ${voter.age}</span>
+                                <span><i class="fa-solid fa-user mr-1"></i> ${voter.gender}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-3 bg-slate-50 border-t border-slate-100">
+                            <button type="button" onclick="markVoted('${voter.id}')" class="w-full py-2 square-card text-xs font-bold uppercase tracking-widest transition-all ${btnStyle}" ${hasVoted ? 'disabled' : ''}>
+                                ${hasVoted ? 'Recorded' : 'Mark as Voted'}
+                            </button>
+                        </div>
+                    </div>
                 `;
-                listContainer.appendChild(card);
+                container.innerHTML += cardHTML;
             });
         }
 
-        // पेज खुलते ही फंक्शन चलाएं
-        fetchVoters();
+        function updateStats(voters) {
+            const total = voters.length;
+            const voted = voters.filter(v => v.voting_status === 'Voted').length;
+            
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-voted').innerText = voted;
+            document.getElementById('stat-pending').innerText = total - voted;
+        }
+
+        function filterVoters() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allVoters.filter(voter => 
+                voter.name.toLowerCase().includes(query) || 
+                String(voter.house_no).toLowerCase().includes(query)
+            );
+            renderVoters(filtered);
+        }
+
+        // --- Mark Voted with Toast UI ---
+        async function markVoted(id) {
+            const index = allVoters.findIndex(v => v.id == id);
+            if(index > -1) {
+                allVoters[index].voting_status = 'Voted';
+                updateStats(allVoters);
+                filterVoters();
+                showToast("वोट अपडेट कर दिया गया!");
+            }
+
+            try {
+                await supabase.from('voters').update({ voting_status: 'Voted' }).eq('id', id);
+            } catch(e) {
+                showToast("Database error!", true);
+                fetchData(); // revert UI on error
+            }
+        }
+
+        // --- Custom Modern Toast Notification ---
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            const icon = toast.querySelector('i');
+            
+            toastMsg.innerText = msg;
+            
+            if(isError) {
+                toast.classList.remove('bg-dark-900');
+                toast.classList.add('bg-red-600');
+                icon.className = 'fa-solid fa-triangle-exclamation text-white';
+            } else {
+                toast.classList.remove('bg-red-600');
+                toast.classList.add('bg-dark-900');
+                icon.className = 'fa-solid fa-circle-check text-green-400';
+            }
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
     </script>
 </body>
 </html>
